@@ -1,66 +1,81 @@
+import { ApiRoutesData } from '@/core/constants/api-routes.constants';
+import { AppRoutesData } from '@/core/constants/app-routes.constants';
 import { AuthContext } from '@/modules/auth/contexts/AuthContext';
 import type {
     AuthContextValueInterface,
     AuthenticatedUser,
     AuthProviderInterface,
-    AuthSessionValidationResponse,
+    AuthRefreshTokenResponseInterface,
 } from '@/modules/auth/interfaces/auth.interfaces';
 import axios from 'axios';
 import { useEffect, useEffectEvent, useState } from 'react';
-import { useNavigate } from 'react-router';
 
+const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL;
 export const AuthProvider = ({ children }: AuthProviderInterface) => {
-    const navigate = useNavigate();
-    const [user, setUser]: [AuthenticatedUser, React.Dispatch<React.SetStateAction<AuthenticatedUser>> | undefined] =
-        useState(null);
+    const [user, setUser]: [AuthenticatedUser, React.Dispatch<React.SetStateAction<AuthenticatedUser>>] = useState(
+        {} as AuthenticatedUser
+    );
     const [isLoading, setIsLoading]: [boolean, React.Dispatch<React.SetStateAction<boolean>>] = useState<boolean>(true);
 
-    const handleNavigation = useEffectEvent((routeToNavigateTo: string) => {
-        navigate(routeToNavigateTo);
+    const authenticateUser = useEffectEvent(() => {
+        refreshToken();
     });
 
     useEffect(() => {
-        // Validate the user's session
-        const validateSession = async (sessionToken: string) => {
-            try {
-                setIsLoading(true);
-                const response = await axios.post(
-                    `${import.meta.env.VITE_API_BASE_URL}/auth/validate-session`,
-                    undefined,
-                    {
-                        headers: { Authorization: `Bearer ${sessionToken}` },
-                    }
-                );
-
-                const sessionData: AuthSessionValidationResponse = response.data;
-                if (sessionData) {
-                    setUser(sessionData.user);
-                    setIsLoading(false);
-                }
-            } catch (error) {
-                console.log(error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        /**
-         * Check if the user token is in cookie.
-         * If yes, use it to fetch the details of the user.
-         *
-         * If he is not logged in, navigate to log in page.
-         */
-        const sessionToken = '';
-        if (!sessionToken) {
-            handleNavigation('/auth/login');
-        } else {
-            validateSession(sessionToken);
-        }
+        authenticateUser();
     }, []);
+
+    const refreshToken = async () => {
+        try {
+            /**
+             * Call refresh token endpoint
+             * If successful, save the received access token in state.
+             * If not successful, navigate to log in page.
+             */
+            setIsLoading(true);
+            const response = await axios({
+                url: `${apiBaseUrl}${ApiRoutesData.auth.refreshToken.route}`,
+                method: ApiRoutesData.auth.refreshToken.httpMethod,
+            });
+            const sessionData: AuthRefreshTokenResponseInterface = response.data;
+            setIsLoading(false);
+            if (sessionData) {
+                saveSessionData(sessionData);
+            } else {
+                location.assign(AppRoutesData.auth.login);
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const saveSessionData = (sessionData: AuthRefreshTokenResponseInterface) => {
+        setUser({
+            accessToken: sessionData.accessToken,
+            name: sessionData.user?.name,
+            email: sessionData.user?.email,
+            id: sessionData.user?.id,
+        });
+    };
+
+    const clearSessionData = async () => {
+        await axios({
+            url: `${apiBaseUrl}${ApiRoutesData.auth.logout.route}`,
+            method: ApiRoutesData.auth.logout.httpMethod,
+        });
+
+        setUser({} as AuthenticatedUser);
+        location.assign(AppRoutesData.auth.login);
+    };
 
     const contextValue: AuthContextValueInterface = {
         user,
         isLoading,
+        saveSessionData,
+        clearSessionData,
+        refreshToken,
     };
 
     return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

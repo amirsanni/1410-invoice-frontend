@@ -3,16 +3,25 @@ export interface AuthProviderInterface {
 }
 
 export interface AuthenticatedUser {
+    accessToken: string;
+    email: string;
     id: number;
     name: string;
-    token: string;
 }
 
 export interface AuthContextValueInterface {
-    user: AuthenticatedUser;
     isLoading: boolean;
+    user: AuthenticatedUser;
+    clearSessionData: () => Promise<void>;
+    refreshToken: () => Promise<void>;
+    saveSessionData: (sd: AuthRefreshTokenResponseInterface) => void;
 }
 
-export interface AuthSessionValidationResponse {
-    user: AuthenticatedUser;
+export interface AuthRefreshTokenResponseInterface {
+    accessToken: string;
+    user: {
+        email: string;
+        id: number;
+        name: string;
+    };
 }
