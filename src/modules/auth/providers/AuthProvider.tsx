@@ -1,5 +1,4 @@
-import { ApiRoutesData } from '@/core/constants/api-routes.constants';
-import { AppRoutesData } from '@/core/constants/app-routes.constants';
+import { ApiRoutesData, AppRoutesData } from '@/core/constants';
 import { AuthContext } from '@/modules/auth/contexts/AuthContext';
 import type {
     AuthContextValueInterface,
