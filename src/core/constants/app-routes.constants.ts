@@ -2,21 +2,20 @@ export const AppRoutesData = {
     root: '/',
     auth: {
         login: '/auth/login',
-        logout: '/auth/logout',
         register: '/auth/register',
     },
     dashboard: '/dashboard',
-    invoice: {
-        create: '/invoices/create',
-        details: '/invoices/:invoiceId/create',
-        edit: '/invoices/:invoiceId/edit',
+    invoices: {
         root: '/invoices',
+        create: '/create',
+        details: '/:invoiceId',
+        edit: '/:invoiceId/edit',
     },
     products: {
-        create: '/products/create',
-        details: '/products/:productId/create',
-        edit: '/products/:productId/edit',
         root: '/products',
+        create: '/create',
+        details: '/:productId',
+        edit: '/:productId/edit',
     },
     profile: '/profile',
     settings: '/settings'
